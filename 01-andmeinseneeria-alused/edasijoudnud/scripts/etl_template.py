@@ -31,8 +31,16 @@ def extract():
         response = requests.get("https://mingi-api.com/andmed")
         data = response.json()  # tagastab Pythoni listi/dict'i
     """
-    # TODO: päri andmed API_URL-ist ja tagasta tulemus
-    pass
+    response = requests.get(API_URL, timeout=10)
+    response.raise_for_status()
+
+    data = response.json()
+    if data is None:
+        raise ValueError("API returned no data")
+    if not isinstance(data, list):
+        raise ValueError(f"API returned unexpected type {type(data).__name__}, expected list")
+
+    return data
 
 
 def transform(raw_data):
@@ -52,7 +60,16 @@ def transform(raw_data):
         rows.sort(key=lambda r: r[2], reverse=True)
     """
     # TODO: käi raw_data üle, võta igast elemendist vajalikud väljad, tagasta list tuple'itest
-    pass
+    result = []
+    for item in raw_data:
+        name = item["name"]["common"]
+        capital = item["capital"][0] if "capital" in item and item["capital"] else None
+        population = item["population"]
+        area = item["area"]
+        continent = "Europe"
+        result.append((name, capital, population, area, continent))
+    result.sort(key=lambda r: r[2], reverse=True)
+    return result
 
 
 def load(rows):
@@ -72,7 +89,28 @@ def load(rows):
         conn.close()
     """
     # TODO: loo tabel, tühjenda see (TRUNCATE), sisesta andmed, kinnita (commit)
-    pass
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS europe_countries (
+            id SERIAL PRIMARY KEY,
+            name TEXT,
+            capital TEXT,
+            population BIGINT,
+            area_km2 REAL,
+            continent TEXT,
+            loaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    cur.execute("TRUNCATE TABLE europe_countries")
+    for row in rows:
+        cur.execute("""
+            INSERT INTO europe_countries (name, capital, population, area_km2, continent)
+            VALUES (%s, %s, %s, %s, %s)
+        """, row)
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 def main():
@@ -80,6 +118,9 @@ def main():
 
     # Extract
     raw = extract()
+    if raw is None:
+        raise SystemExit("Extract returned no data")
+
     print(f"Extracted: {len(raw)} kirjet\n")
 
     # Transform
