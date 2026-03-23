@@ -5,7 +5,7 @@
 -- See on alternatiiv failile 02_load_data.sql (CSV-st laadimine).
 -- Tulemus on identne, aga allikas on oltp.* skeemi tabelid.
 --
--- Opetuspunkt: OLTP-st laadimine noouab rohkem JOIN-e,
+-- Opetuspunkt: OLTP-st laadimine nõuab rohkem JOIN-e,
 -- sest andmed on jaotatud paljudesse normaliseeritud tabelitesse.
 -- ============================================================
 
@@ -47,7 +47,7 @@ SELECT store_name, city, region
 FROM oltp.store
 ORDER BY store_name;
 
--- DimProduct: noouab JOIN-i kategooria tabeliga
+-- DimProduct: nõuab JOIN-i kategooria tabeliga
 -- (OLTP-s on kategooria eraldi tabelis, star schema-s denormaliseeritud)
 INSERT INTO DimProduct (ProductName, Category, Brand)
 SELECT
@@ -58,7 +58,7 @@ FROM oltp.product p
 JOIN oltp.product_category pc ON p.category_id = pc.category_id
 ORDER BY pc.category_name, p.product_name;
 
--- DimCustomer: noouab JOIN-i aadressitabeliga
+-- DimCustomer: nõuab JOIN-i aadressitabeliga
 -- (OLTP-s on aadress eraldi tabelis, star schema-s denormaliseeritud)
 INSERT INTO DimCustomer (CustomerID, FirstName, LastName, Segment, City)
 SELECT
@@ -81,7 +81,7 @@ ORDER BY method_name;
 -- ------------------------------------------------------------
 -- 2. Laadi faktitabel OLTP tabelitest
 --
--- NB: See noouab JOIN-e labi kogu OLTP skeemi:
+-- NB: See nõuab JOIN-e labi kogu OLTP skeemi:
 --   sales_order_detail -> sales_order_header -> customer -> customer_address
 --   sales_order_detail -> product -> product_category
 --   sales_order_header -> store
