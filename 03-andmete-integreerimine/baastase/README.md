@@ -67,9 +67,11 @@ Lisaülesanded ei pea mahtuma praktikumi põhiaja sisse.
 
 Kui teed lisaülesande 1, arvesta juurde umbes 60 kuni 90 minutit.
 
+Kui teed võtmete kontrolli lisaülesande läbi, arvesta juurde umbes 30 kuni 45 minutit.
+
 Kui teed Parquet lisaülesande läbi, arvesta juurde umbes 30 kuni 45 minutit.
 
-Kui teed kõik lisaülesanded läbi, arvesta põhirajale lisaks umbes 3 kuni 4,5 tundi.
+Kui teed kõik lisaülesanded läbi, arvesta põhirajale lisaks umbes 3,5 kuni 5 tundi.
 
 ## Eeldused
 
@@ -186,6 +188,7 @@ Kõik allpool toodud suhtelised failiteed eeldavad, et asud kaustas `03-andmete-
 - [`scripts/04_check_results.sql`](./scripts/04_check_results.sql) sisaldab lõppkontrolli päringuid
 - [`scripts/lisa_01_prepare_preferences.sql`](./scripts/lisa_01_prepare_preferences.sql) valmistab lisaülesande jaoks ette kolmanda allika tabeli ja lisaväljad
 - [`scripts/lisa_03_integrate_users_template.py`](./scripts/lisa_03_integrate_users_template.py) on lisaülesande mall kolme allika ühendamiseks
+- [`scripts/lisa_04_check_join_keys.py`](./scripts/lisa_04_check_join_keys.py) sisaldab abifunktsioone ühendusvõtmete sobivuse kontrolliks
 - [`scripts/lisa_05_preview_parquet.sql`](./scripts/lisa_05_preview_parquet.sql) näitab, kuidas `Parquet` failist otse pärida
 - [`scripts/lisa_07_load_loyalty_snapshot.sql`](./scripts/lisa_07_load_loyalty_snapshot.sql) loob `Parquet` snapshot'i põhjal staging-vaate
 - [`scripts/lisa_08_check_loyalty_snapshot.sql`](./scripts/lisa_08_check_loyalty_snapshot.sql) kontrollib staging-vaate ja lõpptabeli seost
@@ -831,7 +834,135 @@ Kirjuta `SQL` päring, mis näitab:
 
 Võid teha selle otse `psql` sees või panna uude faili `scripts/05_summary_queries.sql`.
 
-### Lisaülesanne 5: loe `Parquet` snapshot SQL-iga ja seo see lõpptabeliga
+### Lisaülesanne 5: kontrolli, kas ühendusvõtmed allikate vahel päriselt sobituvad
+
+Põhirajal näed lõpptulemusest, et kahel kasutajal jääb `account_status` puudu. Töövoog ise ei anna aga praegu automaatselt teada, millised võtmed jäid sobitumata.
+
+Selles ülesandes lisad `ETL` skripti eraldi kontrolli, mis võrdleb eri allikate e-posti võtmeid enne lõpptabeli laadimist.
+
+See ülesanne eeldab, et oled põhiraja läbi teinud.
+
+Tee nii:
+
+1. vali, kumba skripti tahad täiendada:
+
+- kui jätkad põhirajalt, muuda faili [`scripts/03_integrate_users.py`](./scripts/03_integrate_users.py)
+- kui jätkad pärast lisaülesannet 1, muuda faili [`scripts/lisa_03_integrate_users.py`](./scripts/lisa_03_integrate_users.py)
+
+2. ava fail [`scripts/lisa_04_check_join_keys.py`](./scripts/lisa_04_check_join_keys.py)
+
+See fail sisaldab valmis abifunktsioone, mis:
+
+- koguvad mõlema allika võtmed ühe ja sama normaliseerimisreegli järgi;
+- võrdlevad, millised võtmed sobituvad ja millised mitte;
+- prindivad lühikese raporti.
+
+Hea praktika on siin see, et võtmete kontroll kasutab sama funktsiooni `normalize_email`, mida kasutad ka päris ühendamisel. Nii ei teki olukorda, kus kontroll ja päris töövoog kasutavad eri reegleid.
+
+Selles praktikumis käsitleme `API` allikat põhiallikana. Lõpptabelis on üks rida iga `API` kasutaja kohta ning `CSV` ja `JSON` annavad sellele reale lisavälju juurde.
+
+Põhirajal piisab ühest võrdlusest:
+
+- `API` ja `CSV`
+
+Kui oled enne teinud lisaülesande 1 ja kasutad kolme allikat, tee kaks võrdlust:
+
+- `API` ja `CSV`
+- `API` ja `JSON`
+
+`API` jääb siin põhiallikaks, mille külge teised allikad andmeid juurde annavad. Seepärast ei ole selles ülesandes vaja eraldi võrrelda `CSV` ja `JSON` võtmeid omavahel.
+
+See on levinud töövõte siis, kui sul on üks selge põhiallikas ja teised allikad on rikastavad allikad. Sellisel juhul küsid iga lisallika kohta: kas selle võtmed sobituvad põhiallikaga piisavalt hästi?
+
+Kui projektis ei ole üht selget põhiallikat ja mitu allikat kirjeldavad sama nähtust võrdse kaaluga, siis võib vaja minna teistsugust lähenemist. Siis kas:
+
+- võrdled kõiki allikaid omavahel;
+- või lood eraldi ühise võtmehulgaga võrdlusbaasi, mille vastu kõiki allikaid kontrollid.
+
+Selles praktikumis me seda keerukamat varianti ei kasuta. Siin on loogiline jada järgmine: võta põhiallikas, võrdle seda ühe rikastava allikaga, lisa järgmine rikastav allikas ja võrdle jälle põhiallikaga.
+
+3. lisa valitud skripti impordirida teiste importide juurde.
+
+Põhiraja skripti puhul:
+
+```python
+from lisa_04_check_join_keys import print_key_check_report
+```
+
+Kui kasutad kolme allika skripti, lisa see import:
+
+```python
+from lisa_04_check_join_keys import print_three_source_key_report
+```
+
+4. lisa `main()` funktsioonis pärast rida `status_lookup = read_status_lookup(conn)` sobiv väljakutse.
+
+Põhiraja skripti puhul:
+
+```python
+        print_key_check_report(
+            api_users=api_users,
+            status_lookup=status_lookup,
+            normalize_key=normalize_email,
+        )
+```
+
+Kui kasutad kolme allika skripti, lisa pärast rida `status_lookup = read_status_lookup(conn)` järgmine väljakutse:
+
+```python
+        print_three_source_key_report(
+            api_users=api_users,
+            status_lookup=status_lookup,
+            preferences=preferences,
+            normalize_key=normalize_email,
+        )
+```
+
+5. käivita sama skript uuesti:
+
+Kui muutsid põhiraja skripti:
+
+```bash
+docker compose exec python python /scripts/03_integrate_users.py
+```
+
+Kui muutsid lisaülesande 1 skripti:
+
+```bash
+docker compose exec python python /scripts/lisa_03_integrate_users.py
+```
+
+Põhiraja oodatav tulemus sisaldab lisaks senistele ridadele ka võtmekontrolli raportit:
+
+```text
+- Sobitunud e-posti võtmeid: 8
+- API poolel ilma CSV vasteta: 2
+  API ainult: maxime_nienow@alicia.info
+  API ainult: moriah.stanton@virginia.edu
+- CSV poolel ilma API vasteta: 1
+  CSV ainult: maxiime_nienow@alicia.info
+```
+
+See kontroll ei paranda kirjavigu automaatselt. Selle eesmärk on teha sobitumata võtmed nähtavaks, et saaksid need eraldi üle vaadata.
+
+Kui kasutad kolme allika skripti, näed kahte järjestikust raportit: kõigepealt `API` ja `CSV` võrdlust, seejärel `API` ja `JSON` võrdlust.
+
+Kolme allika variandis on teise võrdluse oodatav tulemus järgmine:
+
+```text
+Võrdlus 2: API ja JSON
+- Sobitunud e-posti võtmeid: 7
+- API poolel ilma JSON vasteta: 3
+  API ainult: chaim_mcdermott@dana.io
+  API ainult: rey.padberg@karina.biz
+  API ainult: sherwood@rosamond.me
+- JSON poolel ilma API vasteta: 3
+  JSON ainult: maxiime_nienow@alicia.info
+  JSON ainult: moriah.stanton@virginia.edu
+  JSON ainult: varia@example.com
+```
+
+### Lisaülesanne 6: loe `Parquet` snapshot SQL-iga ja seo see lõpptabeliga
 
 `Parquet` on veerupõhine failivorming, mida kasutatakse sageli stabiilsete snapshot'ide ja vahefailide hoidmiseks.
 
