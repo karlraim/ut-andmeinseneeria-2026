@@ -56,6 +56,8 @@ services:
       - ./dbt_project:/dbt
     working_dir: /dbt
     tty: true
+    ports:
+      - 18080:8080
 
 volumes:
   pgdata:

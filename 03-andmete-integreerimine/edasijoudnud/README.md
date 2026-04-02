@@ -259,6 +259,16 @@ docker compose exec dbt dbt ls --resource-type model
 
 Näed kõiki mudeleid ja nende kihte. Käivitamisel teab dbt sõltuvusgraafi põhjal, et intermediate mudelid tuleb enne marts mudeleid käivitada.
 
+```bash
+docker compose exec dbt dbt docs generate
+```
+
+```bash
+docker compose exec dbt dbt docs serve --host 0.0.0.0
+```
+
+Mine brauseris http://localhost:18080/. Siit on näha dbt projekti infot ning sõltuvusgraaf (pärinevus).
+
 ---
 
 ### 4. Inkrementaalne mudel (5 min)
