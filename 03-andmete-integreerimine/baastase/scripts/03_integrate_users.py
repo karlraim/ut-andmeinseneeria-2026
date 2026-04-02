@@ -1,8 +1,7 @@
 """Kommenteeritud näide kahe allika ETL töövoost.
 
-Selle faili eesmärk ei ole ainult töö ära teha, vaid aidata lugeda Pythoni
-koodi samm-sammult. Kui Python on sulle veel uus, siis loe kommentaare rahulikult
-ülevalt alla.
+See fail aitab ETL töövoogu ja Pythoni süntaksit samm-sammult jälgida.
+Kui Python on sulle veel uus, loe kommentaare rahulikult ülevalt alla.
 
 Fail teeb järgmise töö:
 
@@ -63,7 +62,7 @@ def get_connection():
     # Hiljem paneme selle conn muutujasse:
     # conn = get_connection()
     #
-    # See tähendab, et conn "päritolu" on:
+    # Nii jõuab ühenduse objekt muutujasse conn:
     # get_connection -> psycopg2.connect -> connection objekt
     return psycopg2.connect(
         # os.environ.get("NIMI", "vaikimisi") küsib väärtust keskkonnast.
@@ -108,7 +107,7 @@ def fetch_api_users():
     # requests.get on funktsioon teegist requests.
     # See tagastab Response objekti, mille paneme muutujasse response.
     #
-    # Muutuja päritolu on siin:
+    # Siin tekib muutuja response nii:
     # requests.get(...) -> Response objekt -> response
     response = requests.get(API_URL, timeout=30)
 
@@ -225,11 +224,8 @@ def read_status_lookup(conn):
     # lookup tähendab siin abisõnastikku, kust saab väärtuse kiiresti kätte.
     lookup = {}
 
-    # Siin kasutame Pythoni "lahtipakkimist":
-    # iga rea neli välja võetakse kohe nelja muutujasse.
-    #
-    # Muutujate päritolu on siin:
-    # conn -> cur -> cur.fetchall() -> rows -> üksikrida -> email, account_status, ...
+    # Siin jagatakse iga rea neli välja nelja muutujasse:
+    # rows -> üksikrida -> email, account_status, source_system, updated_at
     for email, account_status, source_system, updated_at in rows:
         lookup[normalize_email(email)] = {
             "account_status": account_status,
@@ -246,7 +242,7 @@ def build_final_rows(api_users, status_lookup):
     # api_users tuli funktsioonist fetch_api_users()
     # status_lookup tuli funktsioonist read_status_lookup()
     #
-    # See on hea näide muutujate "lineage'ist" ehk päritolust:
+    # Siin on näha, kuidas ühe sammu tulemus liigub järgmisse sammu:
     # fetch_api_users() -> api_users
     # read_status_lookup(conn) -> status_lookup
     # build_final_rows(api_users, status_lookup) -> final_rows
@@ -281,7 +277,7 @@ def build_final_rows(api_users, status_lookup):
 
 
 def load_final_rows(conn, final_rows):
-    """Load: salvesta lõpptulemus analytics skeema tabelisse."""
+    """Load: salvesta lõpptulemus `analytics` skeemi tabelisse."""
 
     # final_rows tuli funktsioonist build_final_rows(...)
     with conn.cursor() as cur:
@@ -360,8 +356,7 @@ def main():
         conn.close()
 
 
-# See on väga levinud Pythoni muster.
-# Kood selle if ploki sees käivitub siis, kui fail pannakse otse jooksma.
+# See plokk käivitab main() ainult siis, kui paned selle faili otse jooksma.
 # Kui sama faili mõnest teisest failist importida, siis main() automaatselt ei käivitu.
 if __name__ == "__main__":
     main()

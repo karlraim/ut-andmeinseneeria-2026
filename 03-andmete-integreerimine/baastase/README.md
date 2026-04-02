@@ -16,8 +16,8 @@
 - [1. Ava õige kaust](#1-ava-õige-kaust)
 - [2. Loo `.env` fail](#2-loo-env-fail)
 - [3. Käivita konteinerid](#3-käivita-konteinerid)
-- [4. Vaata üle põhiallikad](#4-vaata-ule-pohiallikad)
-- [5. Loo skeemad ja tabelid](#5-loo-skeemad-ja-tabelid)
+- [4. Vaata üle põhiallikad](#4-vaata-üle-põhiallikad)
+- [5. Loo skeemid ja tabelid](#5-loo-skeemid-ja-tabelid)
 - [6. Laadi CSV-fail staging-tabelisse](#6-laadi-csv-fail-staging-tabelisse)
 - [7. Vaata valmis ETL-skripti](#7-vaata-valmis-etl-skripti)
 - [8. Käivita ETL](#8-kaivita-etl)
@@ -25,13 +25,13 @@
 - [10. Kontrolli idempotentsust](#10-kontrolli-idempotentsust)
 - [Kontrollpunktid](#kontrollpunktid)
 - [Levinud vead ja lahendused](#levinud-vead-ja-lahendused)
-- [Kokkuvõte](#kokkuvote)
-- [Lisaülesanded](#lisauesanded)
+- [Kokkuvõte](#kokkuvõte)
+- [Lisaülesanded](#lisaülesanded)
 - [Koristamine](#koristamine)
 
 ## Praktikumi eesmärk
 
-Selle praktikumi eesmärk on teha läbi esimene töötav andmete integreerimise töövoog nii, et õppija ei peaks Pythoni osa ise nullist kirjutama.
+Selle praktikumi eesmärk on teha läbi esimene töötav andmete integreerimise töövoog nii, et sa ei peaks Pythoni osa ise nullist kirjutama.
 
 Põhivoos kasutame kahte allikat:
 
@@ -58,12 +58,18 @@ Arvesta umbes 2 tunniga.
 See aeg jaguneb ligikaudu nii:
 
 - 20 min keskkonna käivitamiseks ja failidega tutvumiseks;
-- 25 min skeemade ja tabelite loomiseks;
+- 25 min skeemide ja tabelite loomiseks;
 - 20 min `CSV` faili laadimiseks ja kontrollimiseks;
 - 25 min valmis `ETL` skripti läbivaatamiseks ja käivitamiseks;
 - 30 min tulemuse kontrollimiseks ja korduskäivituse proovimiseks.
 
 Lisaülesanded ei pea mahtuma praktikumi põhiaja sisse.
+
+Kui teed lisaülesande 1, arvesta juurde umbes 60 kuni 90 minutit.
+
+Kui teed Parquet lisaülesande läbi, arvesta juurde umbes 30 kuni 45 minutit.
+
+Kui teed kõik lisaülesanded läbi, arvesta põhirajale lisaks umbes 3 kuni 4,5 tundi.
 
 ## Eeldused
 
@@ -98,16 +104,58 @@ Praktikumi tegemiseks sobib hästi järgmine tööviis:
 - käivitad kõik käsud samas terminaliaknas;
 - avad `SQL`, `CSV`, `JSON` ja `Python` failid VS Code'is.
 
-See on algajale kõige vähem segadust tekitav tööviis.
+See tööviis aitab hoida failid, käsud ja väljundid ühes kohas.
+
+Selle praktikumi saab läbida ka GitHub Codespacesis.
+
+Kui töötad Codespacesis, siis selle praktikumi kaust on tavaliselt:
+
+```text
+/workspaces/ut-andmeinseneeria-2026/03-andmete-integreerimine/baastase
+```
+
+Kasulikud lingid:
+
+- repositoorium: <https://github.com/KristoR/ut-andmeinseneeria-2026>
+- sinu Codespacesi sessioonid: <https://github.com/codespaces>
+
+Selles kursuses kasutab iga praktikum andmebaasi jaoks eri porti. Selle praktikumi port on `5434`.
+
+Sellel praktikumil on ka oma Dockeri andmemaht. Nii ei lähe eelmiste nädalate andmebaasi sisu selle nädala omaga segamini.
+
+Kui tahad selle praktikumi andmebaasi täiesti puhtalt uuesti alustada, kasuta juhendi lõpus käsku `docker compose down -v`.
 
 ### Kuidas saada kätte selle nädala failid?
 
 Kui sul on repositoorium juba eelmiste nädalate tööde jaoks olemas, uuenda enne alustamist failid.
 
+Kui töötad oma isikliku fork'iga, tee enne kohalikus koopias uuendamist GitHubis `Sync fork`.
+
 Kui kasutasid `git clone` käsku:
+
+1. kontrolli olekut:
 
 ```bash
 git status
+```
+
+2. kontrolli, et kohalik repositoorium oleks harus `main`:
+
+```bash
+git branch --show-current
+```
+
+Kui töötad parajasti mõnes teises harus ja seal on sinu kohalikud muudatused, siis tee need enne haru vahetamist commit'iks.
+
+Kui `git branch --show-current` näitab mõnda muud haru, vaheta kõigepealt `main` harule:
+
+```bash
+git checkout main
+```
+
+3. uuenda failid:
+
+```bash
 git pull
 ```
 
@@ -130,15 +178,19 @@ Kõik allpool toodud suhtelised failiteed eeldavad, et asud kaustas `03-andmete-
 - [`Dockerfile.python`](./Dockerfile.python) ehitab Pythoni konteineri
 - [`data/kasutaja_staatus.csv`](./data/kasutaja_staatus.csv) on põhiraja `CSV` allikas
 - [`data/teavituseelistused.json`](./data/teavituseelistused.json) on lisaülesande `JSON` allikas
-- [`scripts/01_create_tables.sql`](./scripts/01_create_tables.sql) loob põhiraja skeemad ja tabelid
+- [`data/kasutaja_rikastus.parquet`](./data/kasutaja_rikastus.parquet) on lisaülesande `Parquet` snapshot
+- [`scripts/01_create_tables.sql`](./scripts/01_create_tables.sql) loob põhiraja skeemid ja tabelid
 - [`scripts/02_load_user_status.sql`](./scripts/02_load_user_status.sql) laadib `CSV` faili `staging` tabelisse
 - [`scripts/03_check_staging.sql`](./scripts/03_check_staging.sql) aitab staging-andmeid kontrollida
 - [`scripts/03_integrate_users.py`](./scripts/03_integrate_users.py) on valmis kahe allika `ETL` skript koos Pythoni süntaksit selgitavate kommentaaridega
 - [`scripts/04_check_results.sql`](./scripts/04_check_results.sql) sisaldab lõppkontrolli päringuid
 - [`scripts/lisa_01_prepare_preferences.sql`](./scripts/lisa_01_prepare_preferences.sql) valmistab lisaülesande jaoks ette kolmanda allika tabeli ja lisaväljad
 - [`scripts/lisa_03_integrate_users_template.py`](./scripts/lisa_03_integrate_users_template.py) on lisaülesande mall kolme allika ühendamiseks
+- [`scripts/lisa_05_preview_parquet.sql`](./scripts/lisa_05_preview_parquet.sql) näitab, kuidas `Parquet` failist otse pärida
+- [`scripts/lisa_07_load_loyalty_snapshot.sql`](./scripts/lisa_07_load_loyalty_snapshot.sql) loob `Parquet` snapshot'i põhjal staging-vaate
+- [`scripts/lisa_08_check_loyalty_snapshot.sql`](./scripts/lisa_08_check_loyalty_snapshot.sql) kontrollib staging-vaate ja lõpptabeli seost
 - [`scripts/naidis_lahendused/lisa_03_integrate_users_lahendus.py`](./scripts/naidis_lahendused/lisa_03_integrate_users_lahendus.py) on üks võimalik lahendus lisaülesandele
-- [`scripts/99_reset.sql`](./scripts/99_reset.sql) puhastab praktikumi skeemad
+- [`scripts/99_reset.sql`](./scripts/99_reset.sql) eemaldab praktikumi skeemid
 - [`scripts/requirements.txt`](./scripts/requirements.txt) loetleb Pythoni teegid
 
 ## Kus praktikumi failid asuvad?
@@ -178,7 +230,7 @@ Näiteks:
 
 Andmete integreerimine tähendab siin vähemalt nelja asja:
 
-- tuua andmed erinevatest allikatest kätte;
+- lugeda andmed erinevatest allikatest sisse;
 - leida ühine võti, mille järgi neid seostada;
 - puhastada see võti enne ühendamist;
 - laadida tulemus tabelisse, mida saab hiljem pärida.
@@ -203,10 +255,16 @@ Selles praktikumis tuleb `CSV` failist kasutaja staatus.
 
 `Staging` on vahekiht, kuhu paneme andmed enne lõplikku kasutustabelit.
 
-Selles praktikumis kasutame `staging` skeema selleks, et hoida:
+Selles praktikumis kasutame `staging` skeemi selleks, et hoida:
 
 - `CSV` failist tulnud kasutajastaatused;
 - `API`-st tulnud kasutajad.
+
+Selles praktikumis on `staging` algallikale lähedane maandumiskiht. Siin hoiame andmeid veel üsna allikalähedasel kujul, enne kui neid puhastame, ühendame ja laadime lõpptabelisse.
+
+Edasijõudnute rajal jääb `staging` samuti allikalähedaseks kihiks, kuid selle ja lõpptabelite vahele tuleb veel eraldi `intermediate` kiht puhastamise ja ümberkujundamise jaoks.
+
+Selles baastaseme praktikumis kasutame lõppkihi kohta nime `analytics`. Mõnes teises projektis või edasijõudnute rajal võib sama lõppkihti kohata nimega `marts`. Need tähistavad sisuliselt sama kihti; ühe projekti sees tasub siiski hoida terminid ühtlasena.
 
 ### Idempotentsus
 
@@ -223,6 +281,12 @@ See ei ole ainus võimalik lahendus, aga baastasemel on see hästi jälgitav.
 
 Selle praktikumi töövoog jaguneb kolmeks etapiks.
 
+Praktikumi tervikuna vaadates teed enne põhilise `ETL` skripti käivitamist ka ühe ettevalmistava laadimissammu.
+
+Kõigepealt laed `CSV` faili tabelisse `staging.user_status`.
+
+Seejärel käivitad Pythoni skripti, mis loeb kasutajad `API`-st ja staatuseandmed staging-tabelist, ühendab need ning kirjutab tulemuse lõpptabelisse.
+
 ### `Extract`
 
 Andmete kättesaamine allikatest.
@@ -230,7 +294,7 @@ Andmete kättesaamine allikatest.
 Selles praktikumis tähendab see:
 
 - kasutajate lugemist `API`-st;
-- kasutajastaatuste võtmist `CSV` failist, mis on enne staging-tabelisse laaditud.
+- staatuseandmete lugemist tabelist `staging.user_status`, kuhu laed `CSV` faili praktikumi 6. sammus.
 
 ### `Transform`
 
@@ -344,12 +408,15 @@ docker compose logs db --tail=20
 
 ## 4. Vaata üle põhiallikad
 
-See samm tehakse hostis VS Code'i failivaates.
+See samm tehakse kahes kohas:
+
+- hostis VS Code'i failivaates
+- veebibrauseris
 
 Põhiraja kaks allikat on:
 
-1. avalik `API`: `https://jsonplaceholder.typicode.com/users`
-2. kohalik `CSV` fail [`data/kasutaja_staatus.csv`](./data/kasutaja_staatus.csv)
+1. avalik `API`: ava brauseris `https://jsonplaceholder.typicode.com/users`
+2. kohalik `CSV` fail [`data/kasutaja_staatus.csv`](./data/kasutaja_staatus.csv): ava see VS Code'is
 
 Vaata need lühidalt üle ja pööra tähelepanu järgmisele:
 
@@ -357,9 +424,11 @@ Vaata need lühidalt üle ja pööra tähelepanu järgmisele:
 - `API` vastuses on kasutaja linn ja ettevõtte nimi pesastatud kujul;
 - mõlemat allikat saab ühendada e-posti alusel, aga enne tuleb e-post puhastada.
 
+Sul ei ole vaja kõiki välju detailselt läbi analüüsida. Piisab sellest, kui märkad, millised väljad on olemas ja milline väli sobib ühendusvõtmeks.
+
 Samas kaustas on ka fail [`data/teavituseelistused.json`](./data/teavituseelistused.json), kuid põhirajal me seda veel ei kasuta. See tuleb mängu lisaülesandes.
 
-## 5. Loo skeemad ja tabelid
+## 5. Loo skeemid ja tabelid
 
 See samm tehakse kõigepealt hosti terminalis, seejärel `psql` sees.
 
@@ -375,7 +444,7 @@ Kui `psql` on avanenud, käivita tabelite loomise skript:
 \i /scripts/01_create_tables.sql
 ```
 
-Kontrolli, et skeemad tekkisid:
+Kontrolli, et skeemid tekkisid:
 
 ```sql
 \dn
@@ -390,7 +459,7 @@ Kontrolli, et tabelid tekkisid:
 
 Oodatav tulemus:
 
-- skeemad `staging` ja `analytics`
+- skeemid `staging` ja `analytics`
 - tabelid `staging.user_status`, `staging.api_users` ja `analytics.user_profile`
 
 ## 6. Laadi CSV-fail staging-tabelisse
@@ -415,7 +484,7 @@ Siis kontrolli, mida tabelisse laeti:
 
 Pööra tähelepanu sellele, et e-posti väljad ei ole veel puhastatud.
 
-See on tahtlik. Toorandmed võivadki jõuda staging-tabelisse täpselt sellisena, nagu need allikast tulid.
+Staging-tabelisse võivadki jõuda toorandmed täpselt sellisena, nagu need allikast tulid.
 
 Kui oled kontrolli lõpetanud, välju `psql`-ist:
 
@@ -431,16 +500,16 @@ Ava fail [`scripts/03_integrate_users.py`](./scripts/03_integrate_users.py).
 
 Sa ei pea selles etapis skripti muutma. Eesmärk on saada aru, mida valmis töövoog teeb.
 
-Failis on nüüd sees ka pikemad kommentaarid, mis aitavad jälgida nii `ETL` loogikat kui ka Pythoni süntaksit.
+Faili kommentaarid aitavad jälgida nii `ETL` loogikat kui ka Pythoni süntaksit.
 
 Vaata läbi neli kohta. Need vastavad `ETL` etappidele nii:
 
 1. `Extract`: `fetch_api_users` loeb kasutajad `API`-st
-2. `Extract`: `read_status_lookup` loeb `CSV` failist staging-tabelisse jõudnud staatused
+2. `Extract`: `read_status_lookup` loeb tabelist `staging.user_status` `CSV` failist laetud staatused
 3. `Transform`: `normalize_email` puhastab ühendusvõtme ja `build_final_rows` ühendab andmed
 4. `Load`: `load_api_users` ja `load_final_rows` kirjutavad andmed tabelitesse
 
-See on selles kursuses esimene täielikult läbi mängitud `ETL` näide.
+Nii näed kogu töövoogu algusest lõpuni ühes failis.
 
 ## 8. Käivita ETL
 
@@ -472,7 +541,7 @@ Kõige sagedasemad vead selles kohas on:
 
 - `API` päring ei õnnestu;
 - andmebaasi tabelid ei ole veel loodud;
-- `CSV` faili pole enne staging-tabelisse laaditud.
+- `CSV` faili pole enne staging-tabelisse laetud.
 
 ## 9. Kontrolli tulemust SQL-iga
 
@@ -498,6 +567,21 @@ Vaata eriti järgmisi küsimusi:
 - kas mõnel kasutajal on `account_status` puudu.
 
 See viimane küsimus on oluline. Integreerimisel ei olegi alati igas allikas kõigi kirjete kohta täielikku infot.
+
+Selles andmestikus on selline puudulik sobitumine ootuspärane.
+
+Oodatav tulemus on järgmine:
+
+- lõpptabelis on 10 kasutajat;
+- neist 8 kasutajal on `account_status` olemas;
+- 2 kasutajal jääb `account_status` väärtus `NULL`.
+
+See juhtub kahel eri põhjusel:
+
+- ühel juhul on `CSV` failis e-posti aadressis kirjaviga `maxiime_nienow@alicia.info`;
+- teisel juhul puudub `CSV` failist üldse kirje kasutaja `moriah.stanton@virginia.edu` kohta.
+
+See aitab näha, et andmete integreerimine ei tähenda ainult ühendamist, vaid ka allikate kvaliteedi kontrolli.
 
 Kui oled tulemuse üle vaadanud, välju `psql`-ist:
 
@@ -540,7 +624,7 @@ Praktikumi keskel ja lõpus saad end kontrollida nende punktide abil.
 
 ### Pärast tabelite loomist
 
-- `\dn` näitab skeemasid `staging` ja `analytics`
+- `\dn` näitab skeeme `staging` ja `analytics`
 - `\dt staging.*` näitab kahte staging-tabelit
 
 ### Pärast `CSV` laadimist
@@ -555,6 +639,32 @@ Praktikumi keskel ja lõpus saad end kontrollida nende punktide abil.
 
 ## Levinud vead ja lahendused
 
+See jaotis katab selle praktikumi kõige tõenäolisemad komistuskohad. Kui jääd hätta käsurea, `psql` või Dockeriga tehtavate põhisammudega, vaata vajadusel uuesti ka [praktikum 1 juhendit](../../01-andmeinseneeria-alused/baastase/README.md) ja [praktikum 2 juhendit](../../02-andmemudelid-ja-baasid/baastase/README.md).
+
+### Sümptom: `no configuration file provided: not found`
+
+Tõenäoline põhjus:
+
+- käivitasid `docker compose` käsu vales kaustas
+
+Lahendus:
+
+- kontrolli käsuga `pwd` või `Get-Location`, kus sa parasjagu asud
+- liigu kausta `03-andmete-integreerimine/baastase`
+- käivita siis käsk `docker compose up -d --build`
+
+### Sümptom: `.env` faili ei leita
+
+Tõenäoline põhjus:
+
+- fail `.env` on veel loomata
+
+Lahendus:
+
+- loo fail käsuga `cp .env.example .env`
+- Windows PowerShellis kasuta käsku `Copy-Item .env.example .env`
+- käivita siis `docker compose up -d --build` uuesti
+
 ### Sümptom: `docker compose up -d --build` ebaõnnestub
 
 Tõenäoline põhjus:
@@ -565,6 +675,18 @@ Lahendus:
 
 - ava Docker Desktop või kontrolli, et sinu Dockeri teenus töötab
 - proovi käsku uuesti
+
+### Sümptom: `Bind for 0.0.0.0:5434 failed` või `port is already allocated`
+
+Tõenäoline põhjus:
+
+- hostis on port `5434` juba mõne teise teenuse kasutuses
+
+Lahendus:
+
+- peata teine teenus, mis sama porti kasutab
+- või muuda failis [`compose.yml`](./compose.yml) real `5434:5432` vasakpoolne number mõneks vabaks pordiks, näiteks `5544:5432`
+- pärast muudatust käivita `docker compose up -d --build` uuesti
 
 ### Sümptom: `could not translate host name "db"`
 
@@ -593,12 +715,26 @@ Lahendus:
 
 Tõenäoline põhjus:
 
-- `CSV` faili pole staging-tabelisse laaditud või ühendusvõti ei klapi
+- `CSV` faili pole staging-tabelisse laetud või ühendusvõti ei klapi
 
 Lahendus:
 
 - kontrolli, et käivitasid faili `\i /scripts/02_load_user_status.sql`
 - vaata skriptis `normalize_email`, mil viisil ühendusvõti puhastatakse
+
+### Sümptom: lisaülesandes loodud tabel või vaade tekib skeemis `public` või läheb sama nimega objektiga konflikti
+
+Tõenäoline põhjus:
+
+- lõid uue tabeli või vaate ilma skeemi nimeta
+- kasutasid liiga üldist nime, näiteks `users`, `results` või `snapshot`
+
+Lahendus:
+
+- kasuta praktikumi olemasolevaid skeeme `staging` ja `analytics`
+- kirjuta objekti nimi alati koos skeemiga, näiteks `staging.user_loyalty_snapshot`
+- kontrolli tabeleid käskudega `\dt staging.*` ja `\dt analytics.*`
+- kontrolli vaateid käsuga `\dv staging.*`
 
 ## Kokkuvõte
 
@@ -606,7 +742,7 @@ Selles praktikumis tegid läbi esimese töötava andmete integreerimise toru.
 
 Töövoog oli järgmine:
 
-1. lõid skeemad ja tabelid;
+1. lõid skeemid ja tabelid;
 2. laadisid `CSV` faili staging-tabelisse;
 3. lugesid kasutajad `API`-st;
 4. puhastasid ühise võtme;
@@ -619,13 +755,15 @@ See on lihtne, aga päris `ETL` näide. Suuremates süsteemides on samme rohkem,
 
 Need ülesanded ei pea mahtuma praktikumi põhiaja sisse.
 
+Lisaülesannetes on juhiseid vähem kui põhirajal. Nendes ülesannetes saad olemasolevat lahendust väikeste sammudega ise laiendada.
+
 ### Lisaülesanne 1: lisa kolmas allikas ja täienda skripti
 
-Selles ülesandes tood mängu ka faili [`data/teavituseelistused.json`](./data/teavituseelistused.json).
+Selles ülesandes kasutad ka faili [`data/teavituseelistused.json`](./data/teavituseelistused.json).
 
 Tee nii:
 
-1. valmista andmebaas ette:
+1. valmista andmebaas ette `psql` sees:
 
 ```sql
 \i /scripts/lisa_01_prepare_preferences.sql
@@ -646,7 +784,11 @@ Copy-Item scripts/lisa_03_integrate_users_template.py scripts/lisa_03_integrate_
 ```
 
 3. täienda failis `scripts/lisa_03_integrate_users.py` märgitud funktsioonid
-4. käivita uus skript Pythoni konteineri sees
+4. käivita uus skript hosti terminalis:
+
+```bash
+docker compose exec python python /scripts/lisa_03_integrate_users.py
+```
 
 Selles lisaülesandes teed ise sama töövoo järgmise sammu läbi: liigud kahelt allikalt kolme allikani.
 
@@ -664,6 +806,10 @@ Tee nii:
 - lisa telefoninumber skripti `fetch_api_users` tulemustesse;
 - lae see ka lõpptabelisse.
 
+Vihje: selles ülesandes on mõistlik täiendada olemasolevat tabelit käsuga `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, mitte luua kogu tabelit uuesti.
+
+Vihje: kui jätkad pärast lisaülesannet 1, siis muuda faili [`scripts/lisa_03_integrate_users.py`](./scripts/lisa_03_integrate_users.py). Kui teed seda ülesannet eraldi, võid sama muudatuse teha ka failis [`scripts/03_integrate_users.py`](./scripts/03_integrate_users.py). Tabeli struktuuri muudatus tee SQL-iga, andmete lugemise ja laadimise loogika muuda Pythoni skriptis.
+
 ### Lisaülesanne 3: märgista kasutajad, kelle kohta osa lisainfost puudub
 
 See ülesanne eeldab, et oled teinud lisaülesande 1.
@@ -671,6 +817,8 @@ See ülesanne eeldab, et oled teinud lisaülesande 1.
 Loo lõpptabelisse väli `has_missing_additional_data`, mis on `true`, kui kasutaja kohta puudub kas staatus või teavituseelistus.
 
 See ülesanne aitab märgata, millise kasutaja kohta ei ole kõiki täiendavaid andmeid kätte saadud.
+
+Vihje: siin kehtib sama mõte nagu lisaülesandes 2.
 
 ### Lisaülesanne 4: tee lihtne kokkuvõttepäring
 
@@ -682,6 +830,72 @@ Kirjuta `SQL` päring, mis näitab:
 - mitu kasutajat eelistab kanalit `email`, `sms` või `push`.
 
 Võid teha selle otse `psql` sees või panna uude faili `scripts/05_summary_queries.sql`.
+
+### Lisaülesanne 5: loe `Parquet` snapshot SQL-iga ja seo see lõpptabeliga
+
+`Parquet` on veerupõhine failivorming, mida kasutatakse sageli stabiilsete snapshot'ide ja vahefailide hoidmiseks.
+
+Selles ülesandes loed etteantud `Parquet` failist ainult vajalikud väljad ja seod need tabeliga `analytics.user_profile`.
+
+See ülesanne eeldab, et oled põhiraja läbi teinud.
+
+Selles keskkonnas kasutame andmebaasipilti `pgduckdb`, mis võimaldab `Parquet` failist otse SQL-iga lugeda.
+
+Tee nii:
+
+1. ava `psql`
+
+```bash
+docker compose exec db psql -U praktikum -d praktikum
+```
+
+2. vaata, milline `Parquet` fail välja näeb:
+
+```sql
+\i /scripts/lisa_05_preview_parquet.sql
+```
+
+See skript näitab:
+
+- esimest 5 rida failist;
+- mitu rida failis kokku on;
+- kuidas võtta `Parquet` failist välja ainult vajalikud tulbad.
+
+Kui `read_parquet` ei tööta kohe, proovi samas `psql` sessioonis käsku:
+
+```sql
+SET duckdb.force_execution = true;
+```
+
+3. loo `staging` skeemi vaade, mille kaudu saad `Parquet` snapshot'i mugavalt edasi kasutada:
+
+```sql
+\i /scripts/lisa_07_load_loyalty_snapshot.sql
+```
+
+See skript loob või uuendab vaate `staging.user_loyalty_snapshot`.
+
+Vaade loeb failist väljad `email`, `loyalty_tier`, `risk_level` ja `snapshot_date`.
+
+Selles ülesandes kasutad vaadet, mitte eraldi PostgreSQL tabelit. Nii saad `Parquet` faili hoida loogiliselt `staging` kihis ja kasutada sama nime hilisemates päringutes.
+
+Pane tähele, et faili kõiki veerge ei pea alati andmebaasi lugema. Sageli piisab sellest, kui võtad stabiilsest snapshot'ist ainult need väljad, mida sul päriselt vaja on.
+
+Selles ülesandes käsitleme `Parquet` faili teise süsteemi perioodilise snapshot'ina, mitte reaalajas uueneva operatiivtabelina. Väljad nagu `loyalty_tier` ja `risk_level` võivad lähteallikas ajas muutuda, kuid selles failis kirjeldavad need seisu kuupäeva `2026-03-10` seisuga.
+
+4. kontrolli tulemust ja seo see lõpptabeliga:
+
+```sql
+\i /scripts/lisa_08_check_loyalty_snapshot.sql
+```
+
+Oodatav tulemus on järgmine:
+
+- `Parquet` failis on 10 rida;
+- vaates `staging.user_loyalty_snapshot` on 10 rida;
+- joinitud tulemus näitab kõigi 10 kasutaja kohta välju `loyalty_tier` ja `risk_level`.
+
+Selles ülesandes ei ole vaja uut Pythoni skripti kirjutada. Kui allikas on stabiilne ja sul on vaja sealt ainult mõnda välja, võib SQL-põhine lahendus olla täiesti piisav.
 
 ## Koristamine
 
@@ -697,7 +911,7 @@ Kui tahad alustada täiesti puhtalt, eemalda ka andmemahu sisu:
 docker compose down -v
 ```
 
-Kui tahad ainult praktikumi skeemad andmebaasist ära kustutada, aga konteineri alles jätta:
+Kui tahad ainult praktikumi skeemid andmebaasist ära kustutada, aga konteineri alles jätta:
 
 1. ava `psql`
 2. käivita:

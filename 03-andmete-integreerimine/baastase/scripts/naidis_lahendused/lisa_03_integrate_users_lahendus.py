@@ -187,7 +187,7 @@ def build_final_rows(api_users, status_lookup, preference_lookup):
 
 
 def load_final_rows(conn, final_rows):
-    """Load: salvesta lõpptulemus analytics skeema tabelisse."""
+    """Load: salvesta lõpptulemus `analytics` skeemi tabelisse."""
     with conn.cursor() as cur:
         cur.execute("TRUNCATE TABLE analytics.user_profile;")
         for row in final_rows:
